@@ -1,6 +1,6 @@
 # MetaFireProx
 
-***`metafireprox.py` is a small tool for scraping certain extensions of files from Google Search results for a specific domain using FireProx API. ***
+***`metafireprox.py` is a small tool for scraping certain extensions of files from Google Search results for a specific domain using FireProx API.***
 
 ## Introduction
 
