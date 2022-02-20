@@ -19,7 +19,7 @@ FireProx leverages the AWS API Gateway to create pass-through proxies that rotat
 
 ## Usage
 ```shell
-usage: metafireprox.py [-h] -d DOMAIN -x PROXY -e FILE_TYPES [-o OUTPUT_FOLDER] [-p MAX_PAGES] [-t MAX_THREADS]
+usage: metafireprox.py [-h] -d DOMAIN -x PROXY -e FILE_TYPES [-o OUTPUT_FOLDER] [-p MAX_PAGES] [-t MAX_THREADS] [-w DELAY]
 
 Scrape certain extensions of files from Google Search results for a specific domain using FireProx API
 
@@ -31,6 +31,7 @@ optional arguments:
   -o OUTPUT_FOLDER  The output folder where the results will be stored
   -p MAX_PAGES      Google search pages to enumerate (default:1000)
   -t MAX_THREADS    Number of threads per extension (default:5)
+  -w DELAY          Specify the delay (in seconds) to avoid being fingerprinting
 ```
 
 **Create a new API gateway proxy in a specific AWS region (example: us-west-1) using https://www.google.com URL end-point**
