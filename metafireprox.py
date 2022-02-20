@@ -10,31 +10,39 @@ import time
 add_lock = threading.Lock()
 query_queue = Queue()
 search_results = defaultdict(list)
+blocked_by_google = False
 
 def csv_list(string):
     return string.split(",")
 
 def check_query(proxy, query):
+	global blocked_by_google
 	if proxy[-1] == '/':
 		proxy = proxy[:-1]
-		
-	url = f'{proxy}/{query}'
-	headers = {
-		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.7113.93 Safari/537.36',
-	}
 
-	parts = query.split('&')[0].split('site:')
-	domain = parts[1].strip()
-	filetype = parts[0].split(':')[1].strip()
-	results = requests.get(url, headers=headers, verify=False, proxies=None)
-	soup = BeautifulSoup(results.text, 'lxml')
-	with add_lock:
-		idx = 1
-		for a in soup.find_all('a', href=True):
-			link = a['href']
-			if domain + '/' in link:
-				search_results[filetype].append(link)
-			idx+=1
+	if not blocked_by_google:
+		time.sleep(delay)
+		url = f'{proxy}/{query}'
+		headers = {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.7113.93 Safari/537.36',
+		}
+		results = requests.get(url, headers=headers, verify=False, proxies=None)
+		if results.status_code == 429:
+			print("[!] Google is blocking you for making too many requests. Make sure the requests are rotated properly! Whatever you are doing is probably being fingerprinting...Please try to increase the delay to bypass the bot detection and mitigation system !")
+			print("[!] Exiting the current thread for now...")
+			blocked_by_google = True
+		else:
+			parts = query.split('&')[0].split('site:')
+			domain = parts[1].strip()
+			filetype = parts[0].split(':')[1].strip()
+			soup = BeautifulSoup(results.text, 'lxml')
+			with add_lock:
+				idx = 1
+				for a in soup.find_all('a', href=True):
+					link = a['href']
+					if domain + '/' in link:
+						search_results[filetype].append(link)
+					idx+=1
 
 def gen_queries(domain, filetype, max_pages):
 	query = f'search?q=filetype:{filetype} site:{domain}&start=0&num=100'
@@ -65,6 +73,7 @@ def gen_results(output_folder):
 			print(f'[+] Total .{key} files: {len(search_results[key])}')
 
 def main():
+	global delay
 	parser = argparse.ArgumentParser(description='Scrape certain extensions of files from Google Search results for a specific domain using FireProx API by @froyo75')
 	parser.add_argument("-d", help="Domain to search", type=str, required=True,  default=None, dest="domain")
 	parser.add_argument('-x', help='FireProx API URL', type=str, required=True, default=None, dest="proxy")
@@ -72,6 +81,7 @@ def main():
 	parser.add_argument('-o', help='The output folder where the results will be stored', type=str, default='.', dest="output_folder")
 	parser.add_argument('-p', help='Google search pages to enumerate (default:1000)', type=int, default=1000, dest="max_pages")
 	parser.add_argument('-t', help='Number of threads per extension (default:5)', type=int, default=5, dest="max_threads")
+	parser.add_argument('-w', help='Specify the delay (in seconds) to avoid being fingerprinting', type=float, default=3, dest="delay")
 	args = parser.parse_args()
 
 	proxy = args.proxy
@@ -80,6 +90,7 @@ def main():
 	max_threads = args.max_threads
 	max_pages = args.max_pages
 	output_folder = args.output_folder
+	delay = args.delay
 
 	if output_folder == '.':
 		output_folder = domain.replace('.','_')
@@ -90,6 +101,8 @@ def main():
 		# Generate all three letter combinations.
 		file_types = ["".join(i) for i in product(ascii_lowercase, repeat=3)]
 
+	start = time.time()
+	
 	for filetype in file_types:
 		print(f"[*] Searching for .{filetype} files...")
 		gen_queries(domain, filetype, max_pages)
@@ -99,8 +112,8 @@ def main():
 			t.start()
 
 	query_queue.join()
-	start = time.time()
 	gen_results(output_folder)
+
 	print('[*] Execution time: {0:.5f}'.format(time.time() - start))
 
 if __name__ == '__main__':
