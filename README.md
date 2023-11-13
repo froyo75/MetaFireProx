@@ -5,7 +5,7 @@
 ## Introduction
 
 The tool performs queries on Google search engine to find specific types of files (pdf, doc, docx, xls, xlsx, ppt, pptx, etc.) being publicly hosted on a web site for a specific domain.
-This is useful for Open Source Intelligence gathering to dertermine what files the organization is leaking to Google search indexers.
+This is useful for Open Source Intelligence gathering to determine what files the organization is leaking to Google search indexers.
 To avoid being blocked by Google, the tool is designed to be used with [Fireprox](https://github.com/ustayready/fireprox). 
 FireProx leverages the AWS API Gateway to create pass-through proxies that rotate the source IP address with every request.
 
